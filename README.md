@@ -1,2 +1,173 @@
-# sorowork-contracts
-SoroWork Soroban smart contracts — bounty escrow, treasury, contribution registry
+# SoroWork Contracts
+
+Soroban smart contracts powering the SoroWork decentralized work-to-earn platform on Stellar.
+
+## Contracts
+
+### 1. Bounty Escrow (`contracts/bounty-escrow`)
+
+Manages the full lifecycle of work bounties:
+
+- **Creator** posts a bounty by depositing USDC into escrow
+- **Creator** assigns a contributor to the task
+- **Contributor** submits their work with an evidence hash (e.g., IPFS CID)
+- **Creator** approves the work → USDC is released to the contributor
+- **Creator** can refund the bounty if it's still Open or Assigned
+
+**States:** `Open → Assigned → Submitted → Approved` (or `Cancelled` via refund)
+
+### 2. Community Treasury (`contracts/community-treasury`)
+
+An admin-controlled pool for community rewards and tips:
+
+- Anyone can **deposit** tokens into the treasury
+- Only the **admin** can **distribute** tokens to recipients with a reason
+- Useful for bounties beyond the escrow flow: event prizes, team rewards, grants
+
+### 3. Contribution Registry (`contracts/contribution-registry`)
+
+On-chain, append-only record of verified contributor work:
+
+- Stores each contributor's task IDs, evidence hashes, timestamps, and reward amounts
+- Only the **authorized caller** (the bounty escrow contract) can write records
+- Queryable by contributor address: get count, single entry, or all entries (capped at 100)
+
+---
+
+## Payment Flow
+
+```
+Creator                 BountyEscrow            Contributor
+  |                          |                       |
+  |  create_bounty(amount)   |                       |
+  |------------------------->|                       |
+  |  (USDC locked in escrow) |                       |
+  |                          |                       |
+  |  assign_contributor()    |                       |
+  |------------------------->|                       |
+  |                          |                       |
+  |                          |  submit_work(hash)    |
+  |                          |<----------------------|
+  |                          |                       |
+  |  approve_work()          |                       |
+  |------------------------->|                       |
+  |                          |  transfer USDC ------>|
+  |                          |                       |
+  |                          |  record_contribution()|
+  |                          |--> ContribRegistry    |
+```
+
+---
+
+## Deploy to Testnet
+
+### Prerequisites
+
+```bash
+# Install Stellar CLI
+cargo install stellar-cli --features opt
+
+# Configure testnet identity
+stellar keys generate --global mykey --network testnet
+stellar keys fund mykey --network testnet
+```
+
+### Deploy Contracts
+
+```bash
+# Build all contracts
+cargo build --target wasm32-unknown-unknown --release
+
+# Deploy bounty-escrow
+stellar contract deploy \
+  --wasm target/wasm32-unknown-unknown/release/bounty_escrow.wasm \
+  --source mykey \
+  --network testnet
+# Save output as CONTRACT_ID_ESCROW
+
+# Deploy community-treasury
+stellar contract deploy \
+  --wasm target/wasm32-unknown-unknown/release/community_treasury.wasm \
+  --source mykey \
+  --network testnet
+# Save output as CONTRACT_ID_TREASURY
+
+# Initialize treasury
+stellar contract invoke \
+  --id $CONTRACT_ID_TREASURY \
+  --source mykey \
+  --network testnet \
+  -- initialize \
+  --admin $(stellar keys address mykey) \
+  --token USDC_TOKEN_ADDRESS
+
+# Deploy contribution-registry
+stellar contract deploy \
+  --wasm target/wasm32-unknown-unknown/release/contribution_registry.wasm \
+  --source mykey \
+  --network testnet
+# Save output as CONTRACT_ID_REGISTRY
+
+# Initialize registry — pass the escrow contract as the authorized caller
+stellar contract invoke \
+  --id $CONTRACT_ID_REGISTRY \
+  --source mykey \
+  --network testnet \
+  -- initialize \
+  --authorized_caller $CONTRACT_ID_ESCROW
+```
+
+---
+
+## Function Reference
+
+### BountyEscrow
+
+| Function | Caller | Description |
+|---|---|---|
+| `create_bounty(creator, token, amount) -> u64` | Creator | Lock tokens and create task |
+| `assign_contributor(task_id, contributor, caller)` | Creator | Set contributor for a task |
+| `submit_work(task_id, contributor, evidence_hash)` | Contributor | Submit work with IPFS hash |
+| `approve_work(task_id, caller)` | Creator | Release escrow to contributor |
+| `refund_bounty(task_id, caller)` | Creator | Cancel and return tokens |
+| `get_bounty(task_id) -> BountyInfo` | Anyone | Read bounty state |
+| `get_task_count() -> u64` | Anyone | Total number of tasks |
+
+### CommunityTreasury
+
+| Function | Caller | Description |
+|---|---|---|
+| `initialize(admin, token)` | Deployer | Set admin and token (once) |
+| `deposit(from, amount)` | Anyone | Add funds to treasury |
+| `distribute(caller, recipient, amount, reason)` | Admin | Send funds out |
+| `get_balance() -> i128` | Anyone | Current treasury balance |
+| `get_admin() -> Address` | Anyone | Current admin address |
+
+### ContributionRegistry
+
+| Function | Caller | Description |
+|---|---|---|
+| `initialize(authorized_caller)` | Deployer | Set the escrow contract (once) |
+| `record_contribution(caller, contributor, task_id, evidence_hash, reward_amount)` | Escrow only | Log a verified contribution |
+| `get_contribution_count(contributor) -> u32` | Anyone | How many contributions |
+| `get_contribution(contributor, index) -> ContributionEntry` | Anyone | Single entry by index |
+| `get_all_contributions(contributor) -> Vec<ContributionEntry>` | Anyone | All entries (max 100) |
+
+---
+
+## Security Notes
+
+- **Re-entrancy**: Soroban's execution model prevents re-entrancy at the host level.
+- **Authorization**: Every state-changing function requires `require_auth()` on the relevant party. The registry rejects any caller that is not the initialized escrow address.
+- **Status guards**: Each state transition checks the current status, preventing double-approvals, double-refunds, and out-of-order submissions.
+- **Initialization guards**: Treasury and registry cannot be re-initialized once set.
+- **Evidence hashes**: Stored as raw `Bytes` on-chain. The backend validates that these are valid IPFS CIDs before triggering `approve_work`.
+- **Testnet USDC**: Use Stellar's native testnet USDC asset for integration testing.
+
+---
+
+## Running Tests
+
+```bash
+cargo test --workspace
+```
