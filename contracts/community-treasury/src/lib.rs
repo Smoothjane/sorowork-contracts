@@ -176,3 +176,48 @@ mod test {
         client.initialize(&admin, &token_addr);
     }
 }
+
+#[cfg(test)]
+mod test_validation_treasury {
+    use super::*;
+    use soroban_sdk::testutils::Address as _;
+    use soroban_sdk::{token, Address, Env};
+
+    fn setup_token(env: &Env, admin: &Address) -> (Address, token::StellarAssetClient<'_>) {
+        let token_id = env.register_stellar_asset_contract_v2(admin.clone());
+        (token_id.address(), token::StellarAssetClient::new(env, &token_id.address()))
+    }
+
+    #[test]
+    #[should_panic(expected = "amount must be positive")]
+    fn test_zero_deposit_rejected() {
+        let env = Env::default();
+        env.mock_all_auths();
+        let contract_id = env.register(CommunityTreasury, ());
+        let client = CommunityTreasuryClient::new(&env, &contract_id);
+        let admin = Address::generate(&env);
+        let depositor = Address::generate(&env);
+        let (token_addr, _) = setup_token(&env, &admin);
+        client.initialize(&admin, &token_addr);
+        client.deposit(&depositor, &0);
+    }
+
+    #[test]
+    fn test_multiple_deposits_accumulate() {
+        let env = Env::default();
+        env.mock_all_auths();
+        let contract_id = env.register(CommunityTreasury, ());
+        let client = CommunityTreasuryClient::new(&env, &contract_id);
+        let admin = Address::generate(&env);
+        let (token_addr, sac) = setup_token(&env, &admin);
+        client.initialize(&admin, &token_addr);
+
+        let d1 = Address::generate(&env);
+        let d2 = Address::generate(&env);
+        sac.mint(&d1, &500);
+        sac.mint(&d2, &300);
+        client.deposit(&d1, &500);
+        client.deposit(&d2, &300);
+        assert_eq!(client.get_balance(), 800);
+    }
+}
