@@ -8,6 +8,8 @@ pub struct ContributionEntry {
     pub evidence_hash: Bytes,
     pub timestamp: u64,
     pub reward_amount: i128,
+    /// Quality score assigned by the approver (0-100).
+    pub quality_score: u32,
 }
 
 #[contracttype]
