@@ -351,3 +351,29 @@ mod test {
         assert_eq!(client.get_task_count(), 3);
     }
 }
+
+#[cfg(test)]
+mod test_validation {
+    use super::*;
+    use soroban_sdk::testutils::Address as _;
+    use soroban_sdk::{token, Address, Env};
+
+    fn create_token(env: &Env, admin: &Address) -> (Address, token::StellarAssetClient<'_>) {
+        let token_id = env.register_stellar_asset_contract_v2(admin.clone());
+        let sac = token::StellarAssetClient::new(env, &token_id.address());
+        (token_id.address(), sac)
+    }
+
+    #[test]
+    #[should_panic(expected = "amount must be positive")]
+    fn test_create_bounty_zero_amount() {
+        let env = Env::default();
+        env.mock_all_auths();
+        let contract_id = env.register(BountyEscrow, ());
+        let client = BountyEscrowClient::new(&env, &contract_id);
+
+        let creator = Address::generate(&env);
+        let (token_addr, _sac) = create_token(&env, &creator);
+        client.create_bounty(&creator, &token_addr, &0);
+    }
+}
