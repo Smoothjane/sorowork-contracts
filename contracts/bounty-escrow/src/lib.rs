@@ -438,3 +438,33 @@ mod test_wrong_submitter {
         client.submit_work(&task_id, &impostor, &Bytes::from_slice(&env, b"fake"));
     }
 }
+
+#[cfg(test)]
+mod test_double_approve {
+    use super::*;
+    use soroban_sdk::testutils::Address as _;
+    use soroban_sdk::{token, Address, Bytes, Env};
+
+    fn create_token(env: &Env, admin: &Address) -> (Address, token::StellarAssetClient<'_>) {
+        let token_id = env.register_stellar_asset_contract_v2(admin.clone());
+        (token_id.address(), token::StellarAssetClient::new(env, &token_id.address()))
+    }
+
+    #[test]
+    #[should_panic(expected = "bounty must be Submitted")]
+    fn test_cannot_approve_twice() {
+        let env = Env::default();
+        env.mock_all_auths();
+        let contract_id = env.register(BountyEscrow, ());
+        let client = BountyEscrowClient::new(&env, &contract_id);
+        let creator = Address::generate(&env);
+        let worker = Address::generate(&env);
+        let (token_addr, sac) = create_token(&env, &creator);
+        sac.mint(&creator, &1000);
+        let task_id = client.create_bounty(&creator, &token_addr, &500);
+        client.assign_contributor(&task_id, &worker, &creator);
+        client.submit_work(&task_id, &worker, &Bytes::from_slice(&env, b"proof"));
+        client.approve_work(&task_id, &creator);
+        client.approve_work(&task_id, &creator);
+    }
+}
