@@ -42,6 +42,23 @@ pub enum DataKey {
     TaskCounter,
 }
 
+/// Errors that can occur in bounty escrow operations.
+#[contracttype]
+#[derive(Clone, Debug, PartialEq)]
+pub enum BountyError {
+    /// Bounty with the given task_id does not exist.
+    NotFound,
+    /// Caller is not authorized for this operation.
+    Unauthorized,
+    /// Invalid state transition attempted.
+    InvalidStatus,
+    /// Amount must be greater than zero.
+    InvalidAmount,
+    /// No contributor has been assigned.
+    NoContributor,
+    /// Task has passed its deadline.
+    DeadlinePassed,
+}
 fn get_task_counter(env: &Env) -> u64 {
     env.storage().instance().get(&DataKey::TaskCounter).unwrap_or(0u64)
 }
