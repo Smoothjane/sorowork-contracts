@@ -5,11 +5,17 @@ use soroban_sdk::{
 
 #[contracttype]
 #[derive(Clone, PartialEq, Debug)]
+/// Status of a community work bounty through its lifecycle.
 pub enum BountyStatus {
+    /// Task posted, waiting for worker assignment.
     Open,
+    /// Worker assigned, waiting for work submission.
     Assigned,
+    /// Work submitted with evidence, awaiting approval.
     Submitted,
+    /// Work approved, payment released to worker.
     Approved,
+    /// Bounty cancelled, funds refunded to creator.
     Cancelled,
 }
 
