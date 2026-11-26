@@ -34,6 +34,8 @@ pub enum ContributionError {
     ContributionNotFound,
     IndexOutOfBounds,
 }
+const REGISTRY_PERSISTENT_TTL_THRESHOLD: u32 = 17280;
+const REGISTRY_PERSISTENT_TTL_EXTEND: u32 = 1036800;
 #[contract]
 /// Append-only record of verified community work contributions.
 pub struct ContributionRegistry;
