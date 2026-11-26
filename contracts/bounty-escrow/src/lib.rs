@@ -468,3 +468,33 @@ mod test_double_approve {
         client.approve_work(&task_id, &creator);
     }
 }
+
+#[cfg(test)]
+mod test_refund_assigned {
+    use super::*;
+    use soroban_sdk::testutils::Address as _;
+    use soroban_sdk::{token, Address, Env};
+
+    fn create_token(env: &Env, admin: &Address) -> (Address, token::StellarAssetClient<'_>) {
+        let token_id = env.register_stellar_asset_contract_v2(admin.clone());
+        (token_id.address(), token::StellarAssetClient::new(env, &token_id.address()))
+    }
+
+    #[test]
+    fn test_can_refund_assigned_bounty() {
+        let env = Env::default();
+        env.mock_all_auths();
+        let contract_id = env.register(BountyEscrow, ());
+        let client = BountyEscrowClient::new(&env, &contract_id);
+        let creator = Address::generate(&env);
+        let worker = Address::generate(&env);
+        let (token_addr, sac) = create_token(&env, &creator);
+        sac.mint(&creator, &1000);
+        let task_id = client.create_bounty(&creator, &token_addr, &500);
+        client.assign_contributor(&task_id, &worker, &creator);
+        client.refund_bounty(&task_id, &creator);
+        assert_eq!(client.get_bounty(&task_id).status, BountyStatus::Cancelled);
+        let token_client = token::Client::new(&env, &token_addr);
+        assert_eq!(token_client.balance(&creator), 1000);
+    }
+}
