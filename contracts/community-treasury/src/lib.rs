@@ -8,6 +8,7 @@ pub enum DataKey {
 }
 
 #[contract]
+/// Admin-controlled community fund pool for distributing rewards to workers.
 pub struct CommunityTreasury;
 
 #[contractimpl]
