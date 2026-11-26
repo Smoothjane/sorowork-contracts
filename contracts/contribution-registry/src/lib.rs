@@ -21,6 +21,7 @@ pub enum DataKey {
 }
 
 #[contract]
+/// Append-only record of verified community work contributions.
 pub struct ContributionRegistry;
 
 #[contractimpl]
