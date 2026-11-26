@@ -1,4 +1,7 @@
 #![no_std]
+
+/// Contract version for upgrade tracking.
+pub const CONTRACT_VERSION: u32 = 1;
 use soroban_sdk::{
     contract, contractimpl, contracttype, token, Address, Bytes, Env, Symbol,
 };
