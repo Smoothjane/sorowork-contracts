@@ -36,6 +36,7 @@ pub struct BountyInfo {
 }
 
 #[contracttype]
+/// Storage keys for the bounty escrow contract.
 pub enum DataKey {
     BountyInfo(u64),
     TaskCounter,
