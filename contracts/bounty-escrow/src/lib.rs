@@ -45,6 +45,15 @@ pub enum DataKey {
 /// Errors that can occur in bounty escrow operations.
 #[contracttype]
 #[derive(Clone, Debug, PartialEq)]
+/// Priority level for community work tasks.
+#[contracttype]
+#[derive(Clone, Debug, PartialEq)]
+pub enum BountyPriority {
+    Low,
+    Medium,
+    High,
+    Urgent,
+}
 pub enum BountyError {
     /// Bounty with the given task_id does not exist.
     NotFound,
