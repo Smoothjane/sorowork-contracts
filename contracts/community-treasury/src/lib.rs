@@ -5,6 +5,7 @@ use soroban_sdk::{contract, contractimpl, contracttype, token, Address, Env, Sym
 pub enum DataKey {
     Admin,
     Token,
+    DepositCount,
 }
 
 /// Errors for community treasury operations.
