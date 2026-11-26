@@ -1,43 +1,44 @@
 # SoroWork Contracts
 
-Soroban smart contracts powering the SoroWork decentralized work-to-earn platform on Stellar.
+Soroban smart contracts powering SoroWork — a platform where communities post real-world tasks (cleanups, repairs, landscaping, maintenance) and workers earn USDC on Stellar for completing them.
 
 ## Contracts
 
 ### 1. Bounty Escrow (`contracts/bounty-escrow`)
 
-Manages the full lifecycle of work bounties:
+Manages the full lifecycle of community work bounties:
 
-- **Creator** posts a bounty by depositing USDC into escrow
-- **Creator** assigns a contributor to the task
-- **Contributor** submits their work with an evidence hash (e.g., IPFS CID)
-- **Creator** approves the work → USDC is released to the contributor
-- **Creator** can refund the bounty if it's still Open or Assigned
+- **Community leader** posts a task by depositing USDC into escrow
+- **Leader** assigns a worker to the task
+- **Worker** completes the job and submits proof (photos, video, or other evidence)
+- **Leader** approves the work → USDC is released to the worker
+- **Leader** can refund the bounty if it's still Open or Assigned
 
 **States:** `Open → Assigned → Submitted → Approved` (or `Cancelled` via refund)
 
 ### 2. Community Treasury (`contracts/community-treasury`)
 
-An admin-controlled pool for community rewards and tips:
+An admin-controlled pool for community funds:
 
 - Anyone can **deposit** tokens into the treasury
 - Only the **admin** can **distribute** tokens to recipients with a reason
-- Useful for bounties beyond the escrow flow: event prizes, team rewards, grants
+- Useful for ongoing community maintenance, event cleanups, group rewards, and grants
 
 ### 3. Contribution Registry (`contracts/contribution-registry`)
 
-On-chain, append-only record of verified contributor work:
+On-chain, append-only record of verified worker contributions:
 
-- Stores each contributor's task IDs, evidence hashes, timestamps, and reward amounts
+- Stores each worker's task IDs, evidence hashes, timestamps, and reward amounts
 - Only the **authorized caller** (the bounty escrow contract) can write records
-- Queryable by contributor address: get count, single entry, or all entries (capped at 100)
+- Queryable by worker address: get count, single entry, or all entries (capped at 100)
+- Workers build a verifiable on-chain work history
 
 ---
 
 ## Payment Flow
 
 ```
-Creator                 BountyEscrow            Contributor
+Community Leader         BountyEscrow                Worker
   |                          |                       |
   |  create_bounty(amount)   |                       |
   |------------------------->|                       |
@@ -48,6 +49,7 @@ Creator                 BountyEscrow            Contributor
   |                          |                       |
   |                          |  submit_work(hash)    |
   |                          |<----------------------|
+  |                          |  (photos/video proof) |
   |                          |                       |
   |  approve_work()          |                       |
   |------------------------->|                       |
@@ -125,11 +127,11 @@ stellar contract invoke \
 
 | Function | Caller | Description |
 |---|---|---|
-| `create_bounty(creator, token, amount) -> u64` | Creator | Lock tokens and create task |
-| `assign_contributor(task_id, contributor, caller)` | Creator | Set contributor for a task |
-| `submit_work(task_id, contributor, evidence_hash)` | Contributor | Submit work with IPFS hash |
-| `approve_work(task_id, caller)` | Creator | Release escrow to contributor |
-| `refund_bounty(task_id, caller)` | Creator | Cancel and return tokens |
+| `create_bounty(creator, token, amount) -> u64` | Community leader | Lock tokens and create task |
+| `assign_contributor(task_id, contributor, caller)` | Community leader | Assign a worker to a task |
+| `submit_work(task_id, contributor, evidence_hash)` | Worker | Submit proof of completed work |
+| `approve_work(task_id, caller)` | Community leader | Release escrow to worker |
+| `refund_bounty(task_id, caller)` | Community leader | Cancel and return tokens |
 | `get_bounty(task_id) -> BountyInfo` | Anyone | Read bounty state |
 | `get_task_count() -> u64` | Anyone | Total number of tasks |
 
@@ -161,7 +163,7 @@ stellar contract invoke \
 - **Authorization**: Every state-changing function requires `require_auth()` on the relevant party. The registry rejects any caller that is not the initialized escrow address.
 - **Status guards**: Each state transition checks the current status, preventing double-approvals, double-refunds, and out-of-order submissions.
 - **Initialization guards**: Treasury and registry cannot be re-initialized once set.
-- **Evidence hashes**: Stored as raw `Bytes` on-chain. The backend validates that these are valid IPFS CIDs before triggering `approve_work`.
+- **Evidence hashes**: Stored as raw `Bytes` on-chain. The backend validates evidence before triggering `approve_work`.
 - **Testnet USDC**: Use Stellar's native testnet USDC asset for integration testing.
 
 ---
