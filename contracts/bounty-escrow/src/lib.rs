@@ -21,13 +21,18 @@ pub enum BountyStatus {
 
 #[contracttype]
 #[derive(Clone)]
+/// Stores all data for a single community work bounty.
 pub struct BountyInfo {
+    /// Address of the community leader who posted the task.
     pub creator: Address,
+    /// USDC reward amount locked in escrow.
     pub amount: i128,
+    /// Token contract address (USDC).
     pub token: Address,
+    /// Assigned worker address, if any.
     pub contributor: Option<Address>,
-    pub status: BountyStatus,
-    pub evidence_hash: Option<Bytes>,
+    /// Current lifecycle status of the bounty.    pub status: BountyStatus,
+    /// Hash of submitted work evidence (photos, video proof).    pub evidence_hash: Option<Bytes>,
 }
 
 #[contracttype]
