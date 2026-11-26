@@ -17,6 +17,8 @@ pub enum TreasuryError {
     InvalidAmount,
     InsufficientBalance,
 }
+const TREASURY_INSTANCE_TTL_THRESHOLD: u32 = 17280;
+const TREASURY_INSTANCE_TTL_EXTEND: u32 = 518400;
 #[contract]
 /// Admin-controlled community fund pool for distributing rewards to workers.
 pub struct CommunityTreasury;
