@@ -20,6 +20,16 @@ pub enum DataKey {
     ContribEntry(Address, u32),
 }
 
+/// Errors for contribution registry operations.
+#[contracttype]
+#[derive(Clone, Debug, PartialEq)]
+pub enum ContributionError {
+    AlreadyInitialized,
+    NotInitialized,
+    UnauthorizedCaller,
+    ContributionNotFound,
+    IndexOutOfBounds,
+}
 #[contract]
 /// Append-only record of verified community work contributions.
 pub struct ContributionRegistry;
