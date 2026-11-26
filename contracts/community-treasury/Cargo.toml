@@ -1,5 +1,6 @@
 [package]
 name = "community-treasury"
+description = "Soroban treasury contract for pooled community funds"
 version = "0.1.0"
 edition = "2021"
 publish = false
