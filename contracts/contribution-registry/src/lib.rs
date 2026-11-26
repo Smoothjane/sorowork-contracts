@@ -1,5 +1,5 @@
 #![no_std]
-use soroban_sdk::{contract, contractimpl, contracttype, Address, Bytes, Env, Vec};
+use soroban_sdk::{contract, contractimpl, contracttype, Address, Bytes, Env, Symbol, Vec};
 
 #[contracttype]
 #[derive(Clone)]
@@ -10,6 +10,8 @@ pub struct ContributionEntry {
     pub reward_amount: i128,
     /// Quality score assigned by the approver (0-100).
     pub quality_score: u32,
+    /// Work category (e.g., cleaning, repair, landscaping).
+    pub category: Symbol,
 }
 
 #[contracttype]
