@@ -1,5 +1,6 @@
 [package]
 name = "bounty-escrow"
+description = "Soroban escrow contract for community work bounties on Stellar"
 version = "0.1.0"
 edition = "2021"
 publish = false
