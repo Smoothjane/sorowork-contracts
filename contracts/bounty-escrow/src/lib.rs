@@ -59,6 +59,11 @@ pub enum BountyError {
     /// Task has passed its deadline.
     DeadlinePassed,
 }
+/// Storage TTL values for persistent data.
+const INSTANCE_TTL_THRESHOLD: u32 = 17280; // ~1 day
+const INSTANCE_TTL_EXTEND: u32 = 518400; // ~30 days
+const PERSISTENT_TTL_THRESHOLD: u32 = 17280;
+const PERSISTENT_TTL_EXTEND: u32 = 1036800; // ~60 days
 fn get_task_counter(env: &Env) -> u64 {
     env.storage().instance().get(&DataKey::TaskCounter).unwrap_or(0u64)
 }
