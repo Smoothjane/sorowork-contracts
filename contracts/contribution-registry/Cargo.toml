@@ -1,5 +1,6 @@
 [package]
 name = "contribution-registry"
+description = "On-chain registry of verified community work contributions"
 version = "0.1.0"
 edition = "2021"
 publish = false
