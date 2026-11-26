@@ -7,6 +7,16 @@ pub enum DataKey {
     Token,
 }
 
+/// Errors for community treasury operations.
+#[contracttype]
+#[derive(Clone, Debug, PartialEq)]
+pub enum TreasuryError {
+    AlreadyInitialized,
+    NotInitialized,
+    Unauthorized,
+    InvalidAmount,
+    InsufficientBalance,
+}
 #[contract]
 /// Admin-controlled community fund pool for distributing rewards to workers.
 pub struct CommunityTreasury;
